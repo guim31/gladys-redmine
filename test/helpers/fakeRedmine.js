@@ -17,7 +17,7 @@ export const fixture = (name) =>
 
 export const API_KEY = '0123456789abcdef0123456789abcdef01234567';
 // The time of the changes made in the tests: after the fixtures' own.
-export const CHANGED_AT = '2026-10-22T19:00:00Z';
+export const CHANGED_AT = '2026-10-22T20:00:00Z';
 
 const ERRORS = fixture('real-errors');
 const json = (status, value) => ({

@@ -79,6 +79,10 @@ const OWN_ISSUES_KEPT = 100;
 const MAX_LOOKUPS = 20;
 // Pages of the issues updated today: the total counts beyond them.
 const UPDATED_PAGES = 3;
+// An issue is new only if created after the previous reading, minus this
+// margin (clocks of Redmine and Gladys apart): a project that becomes visible
+// (membership, made public) does not announce its recent issues.
+const CREATED_MARGIN_MS = 15 * 60_000;
 // Answers of Gladys to a scene event that a retry would not change.
 const PERMANENT_REFUSALS = [400, 404, 413, 422];
 // Redmine caps a subject at 255 characters.
@@ -141,6 +145,8 @@ export class RedmineHub {
     this.now = now;
     this.config = null;
     this.client = null;
+    /** Problems already logged, by key: repeats go to debug. */
+    this.warned = new Set();
     this.reset();
     this.saved = null;
     this.connection = null;
@@ -152,8 +158,6 @@ export class RedmineHub {
     this.stopped = false;
     /** Issue numbers created by the scene action, never announced. */
     this.ownIssues = [];
-    /** Problems already logged, by key: repeats go to debug. */
-    this.warned = new Set();
   }
 
   reset() {
@@ -169,6 +173,10 @@ export class RedmineHub {
     this.downSince = null;
     this.readAt = 0;
     this.connectedLogged = false;
+    // A new server or key: its problems are logged afresh.
+    for (const key of ['read', 'limit', 'projects']) {
+      this.warned.delete(key);
+    }
   }
 
   // --- Logs ------------------------------------------------------------------
@@ -208,6 +216,7 @@ export class RedmineHub {
             overdue: intList(saved.overdue),
             mine: intList(saved.mine),
             own: intList(saved.own),
+            readAt: typeof saved.readAt === 'string' ? saved.readAt : '',
           }
         : null;
     this.ownIssues = this.saved?.own ?? [];
@@ -359,6 +368,7 @@ export class RedmineHub {
         account,
         reading: this.reading,
         complete: open.total <= open.issues.length,
+        readAt: now.toISOString(),
       };
       this.readAt = Date.now();
       this.recovered();
@@ -555,7 +565,7 @@ export class RedmineHub {
    * overdue and assigned issues, and the issues created by the scene action
    * (saved, so a restart never announces them).
    */
-  snapshot(scope, reading, maxId = 0) {
+  snapshot(scope, reading, readAt, maxId = 0) {
     return {
       scope,
       maxId: Math.max(
@@ -568,21 +578,24 @@ export class RedmineHub {
       overdue: ids(reading.open.filter((issue) => isOverdue(issue, this.today))),
       mine: ids(reading.mine),
       own: this.ownIssues,
+      readAt,
     };
   }
 
   /**
    * The issues open at the previous reading, absent from the open list now and
    * not updated today: closed before midnight and read after it, deleted,
-   * moved out of sight. Read one by one (a few at most), the closed ones are
-   * returned.
+   * moved out of sight. Read one by one (a few at most): the closed ones are
+   * returned, and those to read again at the next reading (beyond the few, or
+   * not readable now).
    */
   async closedOutOfSight(client, before, reading) {
     const listed = new Set([...ids(reading.open), ...ids(reading.updated)]);
-    const gone = before.open.filter((id) => !listed.has(id)).slice(0, MAX_LOOKUPS);
+    const gone = before.open.filter((id) => !listed.has(id));
+    const later = gone.slice(MAX_LOOKUPS);
     const closed = [];
     const statuses = await client.closedStatuses().catch(() => new Set());
-    for (const id of gone) {
+    for (const id of gone.slice(0, MAX_LOOKUPS)) {
       try {
         const issue = parseIssue(await client.issue(id), statuses);
         if (issue?.closed) {
@@ -590,12 +603,16 @@ export class RedmineHub {
         }
       } catch (err) {
         logger.debug(`Issue #${id} not readable: ${err.message}`);
+        // Deleted or out of sight for good: forgotten; anything else, read again.
+        if (!(err instanceof RedmineError && err.kind === ERROR_KINDS.NOT_FOUND)) {
+          later.push(id);
+        }
       }
     }
-    return closed;
+    return { closed, later };
   }
 
-  async fireEvents({ client, account, reading, complete }) {
+  async fireEvents({ client, account, reading, complete, readAt }) {
     // Per Redmine and per user: another user sees other issues.
     const scope = `${this.config.url}#${account.id}`;
     if (this.saved?.scope !== scope) {
@@ -607,7 +624,7 @@ export class RedmineHub {
       } catch (err) {
         logger.debug(`Last issue number not readable: ${err.message}`);
       }
-      this.saved = this.snapshot(scope, reading, lastId);
+      this.saved = this.snapshot(scope, reading, readAt, lastId);
       this.store.save(this.saved);
       return;
     }
@@ -617,6 +634,12 @@ export class RedmineHub {
     const wasOverdue = new Set(before.overdue);
     const wasMine = new Set(before.mine);
     const seen = new Map([...reading.updated, ...reading.open].map((issue) => [issue.id, issue]));
+    const since = Date.parse(before.readAt) - CREATED_MARGIN_MS;
+    const recent = (issue) =>
+      Number.isNaN(since) || !issue.createdOn || Date.parse(issue.createdOn) >= since;
+    const outOfSight = complete
+      ? await this.closedOutOfSight(client, before, reading)
+      : { closed: [], later: [] };
     // Overdue and closed first: a mass import of new issues must not crowd them out.
     const events = [
       ...reading.open
@@ -625,15 +648,14 @@ export class RedmineHub {
       ...reading.updated
         .filter((issue) => issue.closed && wasOpen.has(issue.id))
         .map((issue) => ({ key: TRIGGERS.CLOSED, issue })),
-      ...(complete ? await this.closedOutOfSight(client, before, reading) : []).map((issue) => ({
-        key: TRIGGERS.CLOSED,
-        issue,
-      })),
+      ...outOfSight.closed.map((issue) => ({ key: TRIGGERS.CLOSED, issue })),
+      // An issue of Gladys is skipped the first time it is seen only: one a
+      // colleague assigns to me later fires.
       ...reading.mine
-        .filter((issue) => !wasMine.has(issue.id) && !own.has(issue.id))
+        .filter((issue) => !wasMine.has(issue.id) && !(own.has(issue.id) && !wasOpen.has(issue.id)))
         .map((issue) => ({ key: TRIGGERS.ASSIGNED, issue })),
       ...[...seen.values()]
-        .filter((issue) => issue.id > before.maxId && !own.has(issue.id))
+        .filter((issue) => issue.id > before.maxId && !own.has(issue.id) && recent(issue))
         .sort((a, b) => a.id - b.id)
         .map((issue) => ({ key: TRIGGERS.CREATED, issue })),
     ];
@@ -643,6 +665,8 @@ export class RedmineHub {
         'burst',
         `${events.length} scene events at once: only the first ${MAX_EVENTS_PER_READING} are sent`,
       );
+    } else {
+      this.resolved('burst');
     }
     // When Gladys cannot take an event now (restarting?), it and the next
     // ones are tried again at the next reading; one it refuses for good is
@@ -655,7 +679,8 @@ export class RedmineHub {
         break;
       }
     }
-    const next = this.snapshot(scope, reading);
+    const next = this.snapshot(scope, reading, readAt);
+    next.open.push(...outOfSight.later.filter((id) => !next.open.includes(id)));
     for (const { key, issue } of unsent) {
       if (key === TRIGGERS.CREATED) {
         // Sent in increasing order: the first one unsent bounds the others.
@@ -729,6 +754,13 @@ export class RedmineHub {
     return new Error(pick(ACTION_TEXT[key], this.language));
   }
 
+  /** Run `fn` between two readings, never during one. */
+  exclusive(fn) {
+    const run = (this.polling ?? Promise.resolve()).catch(() => {}).then(fn);
+    this.polling = run.catch(() => {});
+    return run;
+  }
+
   /** Read again now, and wait for it a little (the scene should not lag). */
   async refreshSoon() {
     const refresh = this.poll().catch(() => {});
@@ -790,18 +822,22 @@ export class RedmineHub {
       if (fields.assign_to_me === true || fields.assign_to_me === 'true') {
         input.assigned_to_id = (this.account ?? (await client.account())).id;
       }
-      created = await client.createIssue(input);
+      // In the reading queue: no reading sees the issue before it is marked
+      // as Gladys's own, never announced (a scene "new issue → create an
+      // issue" would loop).
+      created = await this.exclusive(async () => {
+        const issue = await client.createIssue(input);
+        this.ownIssues = [...this.ownIssues, Number(issue.id)].slice(-OWN_ISSUES_KEPT);
+        if (this.saved) {
+          this.saved = { ...this.saved, own: this.ownIssues };
+          this.store.save(this.saved);
+        }
+        return issue;
+      });
     } catch (err) {
       throw this.explain(err);
     }
     const id = Number(created.id);
-    // Never announced by the next reading: a scene "new issue → create an
-    // issue" would loop.
-    this.ownIssues = [...this.ownIssues, id].slice(-OWN_ISSUES_KEPT);
-    if (this.saved) {
-      this.saved = { ...this.saved, own: this.ownIssues };
-      this.store.save(this.saved);
-    }
     logger.info(`Issue #${id} created from Gladys`);
     await this.refreshSoon();
     return { id, subject, url: issueUrl(this.config.url, id) };

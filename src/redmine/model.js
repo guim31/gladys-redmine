@@ -43,6 +43,7 @@ export function parseIssue(raw, closedStatuses = new Set()) {
     author: nameOf(raw.author),
     assignee: nameOf(raw.assigned_to),
     dueDate: /^\d{4}-\d{2}-\d{2}$/.test(raw.due_date ?? '') ? raw.due_date : '',
+    createdOn: text(raw.created_on),
     updatedOn: text(raw.updated_on),
     closedOn: text(raw.closed_on),
   };

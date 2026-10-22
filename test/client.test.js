@@ -104,6 +104,7 @@ test('an issue of Redmine 6.1, and of a Redmine before 5.1 (no is_closed)', () =
     author: 'Redmine Admin',
     assignee: '',
     dueDate: '',
+    createdOn: '2026-10-22T21:06:13Z',
     updatedOn: '2026-10-22T21:06:19Z',
     closedOn: '2026-10-22T21:06:19Z',
   });

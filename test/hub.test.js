@@ -388,3 +388,45 @@ test('an issue created by Gladys is not announced after a restart either', async
   const second = await world(t, { server, dataDir });
   assert.deepEqual(keys(second), []);
 });
+
+test('an issue created by Gladys, assigned to me later by a colleague, fires', async (t) => {
+  const w = await world(t);
+  const ack = await w.fake.sceneAction('create_issue', { project: 'maison', subject: 'Fuite' });
+  assert.equal(ack.success, true, ack.error);
+  await w.hub.poll();
+  w.server.change(7, { assigned_to: ME });
+  await w.hub.poll();
+  assert.deepEqual(keys(w), ['issue_assigned:7']);
+});
+
+test('a project that becomes visible does not announce its old issues as new', async (t) => {
+  const server = new FakeRedmine();
+  const hidden = server.addIssue({
+    subject: 'Ancienne demande',
+    created_on: '2026-09-01T08:00:00Z',
+  });
+  server.issues = server.issues.filter((issue) => issue !== hidden);
+  const w = await world(t, { server });
+  // The user of the key joins the project of that issue.
+  server.issues.push(hidden);
+  server.addIssue({ subject: 'Vraiment nouvelle' });
+  await w.hub.poll();
+  assert.deepEqual(keys(w), ['issue_created:8']);
+});
+
+test('a mass closure out of sight fires every "closed", over several readings', async (t) => {
+  const server = new FakeRedmine();
+  for (let i = 0; i < 25; i += 1) {
+    server.addIssue({ subject: `Lot ${i}`, updated_on: '2026-10-21T10:00:00Z' });
+  }
+  const w = await world(t, { server });
+  for (const issue of server.issues.filter((i) => i.subject.startsWith('Lot'))) {
+    server.close(issue.id, '2026-10-21T21:59:00Z');
+  }
+  await w.hub.poll();
+  assert.equal(w.fake.sceneEvents.length, 20, 'twenty lookups per reading');
+  await w.hub.poll();
+  assert.equal(w.fake.sceneEvents.length, 25, 'the rest at the next reading');
+  await w.hub.poll();
+  assert.equal(w.fake.sceneEvents.length, 25);
+});
