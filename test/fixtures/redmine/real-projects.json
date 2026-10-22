@@ -1,0 +1,31 @@
+{
+  "projects": [
+    {
+      "id": 2,
+      "name": "Bureau",
+      "identifier": "bureau",
+      "description": null,
+      "homepage": "",
+      "status": 1,
+      "is_public": true,
+      "inherit_members": false,
+      "created_on": "2026-10-22T21:06:12Z",
+      "updated_on": "2026-10-22T21:06:12Z"
+    },
+    {
+      "id": 1,
+      "name": "Maison",
+      "identifier": "maison",
+      "description": null,
+      "homepage": "",
+      "status": 1,
+      "is_public": true,
+      "inherit_members": false,
+      "created_on": "2026-10-22T21:06:12Z",
+      "updated_on": "2026-10-22T21:06:12Z"
+    }
+  ],
+  "total_count": 2,
+  "offset": 0,
+  "limit": 100
+}

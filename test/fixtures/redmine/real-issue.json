@@ -1,0 +1,60 @@
+{
+  "issue": {
+    "id": 5,
+    "project": {
+      "id": 2,
+      "name": "Bureau"
+    },
+    "tracker": {
+      "id": 1,
+      "name": "Anomalie"
+    },
+    "status": {
+      "id": 5,
+      "name": "Fermé",
+      "is_closed": true
+    },
+    "priority": {
+      "id": 1,
+      "name": "Bas"
+    },
+    "author": {
+      "id": 1,
+      "name": "Redmine Admin"
+    },
+    "subject": "Ticket fermé",
+    "description": null,
+    "start_date": "2026-10-22",
+    "due_date": null,
+    "done_ratio": 0,
+    "is_private": false,
+    "estimated_hours": null,
+    "total_estimated_hours": null,
+    "spent_hours": 0,
+    "total_spent_hours": 0,
+    "created_on": "2026-10-22T21:06:13Z",
+    "updated_on": "2026-10-22T21:06:19Z",
+    "closed_on": "2026-10-22T21:06:19Z",
+    "journals": [
+      {
+        "id": 1,
+        "user": {
+          "id": 1,
+          "name": "Redmine Admin"
+        },
+        "notes": "Fait.",
+        "created_on": "2026-10-22T21:06:19Z",
+        "updated_on": "2026-10-22T21:06:19Z",
+        "private_notes": false,
+        "details": [
+          {
+            "property": "attr",
+            "name": "status_id",
+            "old_value": "1",
+            "new_value": "5"
+          }
+        ]
+      }
+    ]
+  }
+}

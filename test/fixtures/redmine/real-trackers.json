@@ -1,0 +1,67 @@
+{
+  "trackers": [
+    {
+      "id": 1,
+      "name": "Anomalie",
+      "default_status": {
+        "id": 1,
+        "name": "Nouveau"
+      },
+      "description": null,
+      "enabled_standard_fields": [
+        "assigned_to_id",
+        "category_id",
+        "fixed_version_id",
+        "parent_issue_id",
+        "start_date",
+        "due_date",
+        "estimated_hours",
+        "done_ratio",
+        "description",
+        "priority_id"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Evolution",
+      "default_status": {
+        "id": 1,
+        "name": "Nouveau"
+      },
+      "description": null,
+      "enabled_standard_fields": [
+        "assigned_to_id",
+        "category_id",
+        "fixed_version_id",
+        "parent_issue_id",
+        "start_date",
+        "due_date",
+        "estimated_hours",
+        "done_ratio",
+        "description",
+        "priority_id"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Assistance",
+      "default_status": {
+        "id": 1,
+        "name": "Nouveau"
+      },
+      "description": null,
+      "enabled_standard_fields": [
+        "assigned_to_id",
+        "category_id",
+        "fixed_version_id",
+        "parent_issue_id",
+        "start_date",
+        "due_date",
+        "estimated_hours",
+        "done_ratio",
+        "description",
+        "priority_id"
+      ]
+    }
+  ]
+}

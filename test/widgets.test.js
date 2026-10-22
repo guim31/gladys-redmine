@@ -1,77 +1,78 @@
+// -----------------------------------------------------------------------------
+// The "my issues" widget: content within the core budget (validated by the
+// SDK's validateWidgetContent), overdue issues first and flagged, links in
+// HTTPS only, and the degraded states.
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateWidgetContent } from '@gladysassistant/integration-sdk';
-import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import { buildDiscoveredDevices } from '../src/devices/index.js';
-import { simulateLanSession } from '../src/devices/plug.js';
-import { DEMO_STATUS_WIDGET, WIDGETS, refreshWidgets } from '../src/widgets.js';
-import { normalizeConfig } from '../src/config.js';
+import { BASE_CONFIG, URL_CLOUD, createWorld } from './helpers/world.js';
 
-const gladys = createFakeGladys();
-const config = normalizeConfig();
-const demoStatus = WIDGETS[DEMO_STATUS_WIDGET];
+async function world(t, options = {}) {
+  const w = await createWorld(options);
+  t.after(() => w.app.stop());
+  return w;
+}
 
-// What the SDK passes to onWidgetGet, plus the config index.js adds.
-const getContent = (cfg = config) =>
-  demoStatus.get(gladys, { settings: {}, language: 'en', units: 'metric', config: cfg });
+async function content(w, language = 'en') {
+  const ack = await w.fake.widgetGet('my_issues', { settings: {}, language, units: 'metric' });
+  assert.equal(ack.success, true, ack.error);
+  const { content: tree } = ack.data;
+  assert.deepEqual(validateWidgetContent(tree), [], 'within the core vocabulary and budget');
+  return tree;
+}
 
-test('the demo_status content is rendered exactly as sent', async () => {
-  // [] = nothing the core would drop, truncate or trim to the content budget.
-  assert.deepEqual(validateWidgetContent(await getContent()), []);
-});
+const ofType = (data, type) => data.components.filter((component) => component.type === type);
 
-test('the degraded plug connection content is valid too', async () => {
-  simulateLanSession(false);
-  try {
-    const content = await getContent();
-    assert.deepEqual(validateWidgetContent(content), []);
-    const status = content.components.find((component) => component.type === 'status');
-    assert.ok(
-      status.items.some((item) => item.color === 'warning'),
-      'degraded shows a warning',
-    );
-  } finally {
-    simulateLanSession(true);
-  }
-});
-
-test('the live tiles reference features the integration publishes', async () => {
-  const featureIds = new Set(
-    buildDiscoveredDevices(gladys, config).flatMap((device) =>
-      device.features.map((feature) => feature.external_id),
-    ),
+test('three tiles and my open issues, overdue first', async (t) => {
+  const w = await world(t);
+  const data = await content(w);
+  assert.deepEqual(
+    ofType(data, 'value').map((tile) => [tile.label, tile.value]),
+    [
+      ['Assigned to me', 3],
+      ['Overdue', 1],
+      ['Due today', 1],
+    ],
   );
-  const liveTiles = (await getContent()).components.filter((c) => c.device_feature);
-  assert.ok(liveTiles.length > 0, 'the template demonstrates a device-bound tile');
-  for (const tile of liveTiles) {
-    assert.ok(featureIds.has(tile.device_feature), `unknown feature ${tile.device_feature}`);
-  }
-});
-
-test('every button action of the content is handled and answers a short toast', async () => {
-  const buttons = (await getContent()).components.filter((c) => c.type === 'button' && c.action);
-  assert.ok(buttons.length > 0, 'the template demonstrates a widget action');
-  for (const { action } of buttons) {
-    const message = await demoStatus.action(gladys, {
-      actionKey: action.key,
-      params: action.params ?? {},
-      settings: {},
-      config,
-    });
-    assert.ok(message.en, 'the toast carries at least the mandatory `en` text');
-    assert.ok(message.en.length <= 200, 'toasts are capped at 200 characters');
-  }
-});
-
-test('an unknown widget action fails, so the user sees the error', async () => {
-  await assert.rejects(
-    demoStatus.action(gladys, { actionKey: 'unknown', params: {}, settings: {}, config }),
-    /Unknown widget action/,
+  const items = ofType(data, 'card-list')[0].items;
+  assert.deepEqual(
+    items.map((item) => [item.title, item.subtitle, item.badge?.text ?? null]),
+    [
+      ['#6 Changer la VMC', 'Maison · Nouveau · Haut', 'Overdue'],
+      ['#1 Purger les radiateurs', 'Maison · Nouveau · Normal', 'Today'],
+      ['#4 Renouveler le certificat TLS', 'Bureau · Nouveau · Normal', null],
+    ],
+  );
+  assert.ok(
+    items.every((item) => item.links === undefined),
+    'no link to an http:// Redmine',
   );
 });
 
-test('refreshWidgets nudges every widget', () => {
-  const fresh = createFakeGladys();
-  refreshWidgets(fresh);
-  assert.deepEqual(fresh.fake.widgetRefreshes, Object.keys(WIDGETS));
+test('in French, with links to an https:// Redmine', async (t) => {
+  const w = await world(t, { config: { ...BASE_CONFIG, url: URL_CLOUD } });
+  const data = await content(w, 'fr');
+  assert.equal(ofType(data, 'value')[1].label, 'En retard');
+  const [first] = ofType(data, 'card-list')[0].items;
+  assert.deepEqual(first.links, [{ url: `${URL_CLOUD}/issues/6`, label: 'Ouvrir dans Redmine' }]);
+});
+
+test('nothing assigned, Redmine down, not configured', async (t) => {
+  const w = await world(t);
+  for (const issue of w.server.issues) {
+    delete issue.assigned_to;
+  }
+  await w.hub.poll();
+  let data = await content(w);
+  assert.equal(ofType(data, 'text')[0].text, 'No open issue assigned to you.');
+  w.server.online = false;
+  await w.hub.poll();
+  data = await content(w);
+  assert.equal(ofType(data, 'text')[0].text, 'Redmine does not answer: last known issues.');
+  const down = await world(t, { config: { ...BASE_CONFIG, url: 'http://198.51.100.9' } });
+  assert.match(ofType(await content(down), 'text')[0].text, /Redmine does not answer/);
+  const empty = await world(t, { config: {} });
+  assert.match(ofType(await content(empty), 'text')[0].text, /Enter the address/);
 });

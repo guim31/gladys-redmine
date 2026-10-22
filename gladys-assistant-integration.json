@@ -1,177 +1,1135 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Redmine",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Redmine issues: open, assigned to me, overdue; scene triggers, and issues created by a scene.",
+    "fr": "Demandes Redmine : ouvertes, à moi, en retard ; déclencheurs, et demandes créées par une scène.",
+    "de": "Redmine-Tickets: offen, mir zugewiesen, überfällig; Auslöser und Tickets aus einer Szene erstellt.",
+    "es": "Peticiones de Redmine: abiertas, mías, atrasadas; disparadores y peticiones creadas por escenas."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-redmine:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-redmine/main/cover.png",
+  "categories": ["services"],
   "transports": ["local", "cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Redmine",
+        "fr": "Votre Redmine",
+        "de": "Dein Redmine",
+        "es": "Su Redmine"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Redmine 4.2 or later, self-hosted or hosted. In Redmine: turn on the REST API (Administration, Settings, API), then copy the API key of a user (My account, API access key, Show). See the documentation.",
+        "fr": "Redmine 4.2 ou plus récent, auto-hébergé ou hébergé. Dans Redmine : activez l'API REST (Administration, Configuration, API), puis copiez la clé d'API d'un utilisateur (Mon compte, Clé d'accès API, Afficher). Voir la documentation.",
+        "de": "Redmine 4.2 oder neuer, selbst gehostet oder gehostet. In Redmine: Schalte die REST-API ein (Administration, Konfiguration, API) und kopiere den API-Schlüssel eines Benutzers (Mein Konto, API-Zugriffsschlüssel, Anzeigen). Siehe Dokumentation.",
+        "es": "Redmine 4.2 o posterior, autoalojado o alojado. En Redmine: active la API REST (Administración, Configuración, API) y copie la clave de API de un usuario (Mi cuenta, Clave de acceso a la API, Mostrar). Consulte la documentación."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://www.redmine.org/projects/redmine/wiki/Rest_api",
+          "label": {
+            "en": "Redmine REST API",
+            "fr": "API REST de Redmine",
+            "de": "Redmine-REST-API",
+            "es": "API REST de Redmine"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "description": {
+        "en": "Address of Redmine as in the browser, with https:// for HTTPS and the /redmine folder if any.",
+        "fr": "Adresse de Redmine comme dans le navigateur, avec https:// pour le HTTPS et le dossier /redmine s'il y en a un.",
+        "de": "Adresse von Redmine wie im Browser, mit https:// für HTTPS und dem Ordner /redmine, falls vorhanden.",
+        "es": "Dirección de Redmine como en el navegador, con https:// para HTTPS y la carpeta /redmine si la hay."
+      },
+      "placeholder": {
+        "en": "e.g. https://redmine.example.org",
+        "fr": "ex. https://redmine.example.org",
+        "de": "z. B. https://redmine.example.org",
+        "es": "p. ej. https://redmine.example.org"
+      },
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "default": ""
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "api_key",
+      "type": "secret",
+      "label": {
+        "en": "API key",
+        "fr": "Clé d'API",
+        "de": "API-Schlüssel",
+        "es": "Clave de API"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "The API key of the Redmine user Gladys acts as: My account, API access key, Show.",
+        "fr": "La clé d'API de l'utilisateur Redmine au nom duquel Gladys agit : Mon compte, Clé d'accès API, Afficher.",
+        "de": "Der API-Schlüssel des Redmine-Benutzers, in dessen Namen Gladys handelt: Mein Konto, API-Zugriffsschlüssel, Anzeigen.",
+        "es": "La clave de API del usuario de Redmine en cuyo nombre actúa Gladys: Mi cuenta, Clave de acceso a la API, Mostrar."
+      },
+      "required": true
     },
     {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "projects",
+      "type": "string",
+      "label": {
+        "en": "Projects with their own device",
+        "fr": "Projets avec leur propre appareil",
+        "de": "Projekte mit eigenem Gerät",
+        "es": "Proyectos con su propio dispositivo"
+      },
+      "description": {
+        "en": "Optional: identifiers or names of projects, separated by commas (10 at most). Each gets a device with its own counters.",
+        "fr": "Facultatif : identifiants ou noms de projets, séparés par des virgules (10 au plus). Chacun reçoit un appareil avec ses propres compteurs.",
+        "de": "Optional: Kennungen oder Namen von Projekten, durch Kommas getrennt (höchstens 10). Jedes bekommt ein Gerät mit eigenen Zählern.",
+        "es": "Opcional: identificadores o nombres de proyectos, separados por comas (10 como máximo). Cada uno recibe un dispositivo con sus propios contadores."
+      },
+      "placeholder": {
+        "en": "e.g. house, office",
+        "fr": "ex. maison, bureau",
+        "de": "z. B. haus, buero",
+        "es": "p. ej. casa, oficina"
+      },
       "required": false,
-      "default": "celsius",
+      "default": ""
+    },
+    {
+      "key": "allow_self_signed",
+      "type": "boolean",
+      "label": {
+        "en": "Accept self-signed certificates",
+        "fr": "Accepter les certificats auto-signés",
+        "de": "Selbstsignierte Zertifikate akzeptieren",
+        "es": "Aceptar certificados autofirmados"
+      },
+      "description": {
+        "en": "For an https:// address whose certificate is self-signed. Tick only for your own server.",
+        "fr": "Pour une adresse en https:// dont le certificat est auto-signé. À cocher pour votre propre serveur seulement.",
+        "de": "Für eine https://-Adresse mit selbstsigniertem Zertifikat. Nur für deinen eigenen Server aktivieren.",
+        "es": "Para una dirección https:// con certificado autofirmado. Márquelo solo para su propio servidor."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Redmine is read: the counters and the scene triggers follow it.",
+        "fr": "Fréquence de lecture de Redmine : les compteurs et les déclencheurs de scène la suivent.",
+        "de": "Wie oft Redmine gelesen wird: Zähler und Szenenauslöser folgen ihr.",
+        "es": "Con qué frecuencia se lee Redmine: los contadores y los disparadores de escena la siguen."
+      },
+      "required": false,
+      "default": "300",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        },
+        {
+          "value": "600",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de funciones"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Names given to the features when the device is added, and texts sent to scenes.",
+        "fr": "Noms donnés aux fonctionnalités à l'ajout de l'appareil, et textes envoyés aux scènes.",
+        "de": "Namen der Funktionen beim Hinzufügen des Geräts und an Szenen gesendete Texte.",
+        "es": "Nombres de las funciones al añadir el dispositivo y textos enviados a las escenas."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads Redmine now and reports what it finds.",
+        "fr": "Lit Redmine maintenant et indique ce qu'il trouve.",
+        "de": "Liest Redmine sofort und meldet, was es findet.",
+        "es": "Lee Redmine ahora e indica lo que encuentra."
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "issue_created",
+      "label": {
+        "en": "New Redmine issue",
+        "fr": "Nouvelle demande Redmine",
+        "de": "Neues Redmine-Ticket",
+        "es": "Nueva petición de Redmine"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "An issue was created in Redmine (not those created by Gladys).",
+        "fr": "Une demande a été créée dans Redmine (hors celles créées par Gladys).",
+        "de": "Ein Ticket wurde in Redmine erstellt (außer den von Gladys erstellten).",
+        "es": "Se ha creado una petición en Redmine (salvo las creadas por Gladys)."
       },
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project name (empty: any)",
+            "fr": "Nom du projet (vide : tous)",
+            "de": "Projektname (leer: beliebig)",
+            "es": "Nombre del proyecto (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, capitals included.",
+            "fr": "Tel qu'écrit dans Redmine, majuscules comprises.",
+            "de": "Wie in Redmine geschrieben, mit Großbuchstaben.",
+            "es": "Tal como está escrito en Redmine, con mayúsculas."
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker (empty: any)",
+            "fr": "Tracker (vide : tous)",
+            "de": "Tracker (leer: beliebig)",
+            "es": "Tipo (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, e.g. Bug.",
+            "fr": "Tel qu'écrit dans Redmine, ex. Anomalie.",
+            "de": "Wie in Redmine geschrieben, z. B. Fehler.",
+            "es": "Tal como está escrito en Redmine, p. ej. Errores."
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority (empty: any)",
+            "fr": "Priorité (vide : toutes)",
+            "de": "Priorität (leer: beliebig)",
+            "es": "Prioridad (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, e.g. Urgent.",
+            "fr": "Tel qu'écrit dans Redmine, ex. Urgent.",
+            "de": "Wie in Redmine geschrieben, z. B. Dringend.",
+            "es": "Tal como está escrito en Redmine, p. ej. Urgente."
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "issue_id",
+          "type": "number",
+          "label": {
+            "en": "Issue number",
+            "fr": "Numéro de la demande",
+            "de": "Ticketnummer",
+            "es": "Número de la petición"
+          }
+        },
+        {
+          "key": "subject",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Subject",
+            "fr": "Sujet",
+            "de": "Betreff",
+            "es": "Asunto"
+          }
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker",
+            "fr": "Tracker",
+            "de": "Tracker",
+            "es": "Tipo"
+          }
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "label": {
+            "en": "Status",
+            "fr": "Statut",
+            "de": "Status",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité",
+            "de": "Priorität",
+            "es": "Prioridad"
+          }
+        },
+        {
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author",
+            "fr": "Auteur",
+            "de": "Autor",
+            "es": "Autor"
+          }
+        },
+        {
+          "key": "assigned_to",
+          "type": "string",
+          "label": {
+            "en": "Assignee",
+            "fr": "Assignée à",
+            "de": "Zugewiesen an",
+            "es": "Asignada a"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (YYYY-MM-DD)",
+            "fr": "Échéance (AAAA-MM-JJ)",
+            "de": "Fälligkeit (JJJJ-MM-TT)",
+            "es": "Fecha de vencimiento (AAAA-MM-DD)"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Link to the issue",
+            "fr": "Lien vers la demande",
+            "de": "Link zum Ticket",
+            "es": "Enlace a la petición"
+          }
+        }
+      ]
+    },
+    {
+      "key": "issue_assigned",
+      "label": {
+        "en": "Redmine issue assigned to me",
+        "fr": "Demande Redmine assignée à moi",
+        "de": "Redmine-Ticket mir zugewiesen",
+        "es": "Petición de Redmine asignada a mí"
+      },
+      "description": {
+        "en": "An open issue is now assigned to the user of the key (or to one of its groups).",
+        "fr": "Une demande ouverte est maintenant assignée à l'utilisateur de la clé (ou à l'un de ses groupes).",
+        "de": "Ein offenes Ticket ist jetzt dem Benutzer des Schlüssels (oder einer seiner Gruppen) zugewiesen.",
+        "es": "Una petición abierta está ahora asignada al usuario de la clave (o a uno de sus grupos)."
+      },
+      "fields": [
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project name (empty: any)",
+            "fr": "Nom du projet (vide : tous)",
+            "de": "Projektname (leer: beliebig)",
+            "es": "Nombre del proyecto (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, capitals included.",
+            "fr": "Tel qu'écrit dans Redmine, majuscules comprises.",
+            "de": "Wie in Redmine geschrieben, mit Großbuchstaben.",
+            "es": "Tal como está escrito en Redmine, con mayúsculas."
+          }
+        },
+        {
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker (empty: any)",
+            "fr": "Tracker (vide : tous)",
+            "de": "Tracker (leer: beliebig)",
+            "es": "Tipo (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, e.g. Bug.",
+            "fr": "Tel qu'écrit dans Redmine, ex. Anomalie.",
+            "de": "Wie in Redmine geschrieben, z. B. Fehler.",
+            "es": "Tal como está escrito en Redmine, p. ej. Errores."
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority (empty: any)",
+            "fr": "Priorité (vide : toutes)",
+            "de": "Priorität (leer: beliebig)",
+            "es": "Prioridad (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, e.g. Urgent.",
+            "fr": "Tel qu'écrit dans Redmine, ex. Urgent.",
+            "de": "Wie in Redmine geschrieben, z. B. Dringend.",
+            "es": "Tal como está escrito en Redmine, p. ej. Urgente."
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "issue_id",
+          "type": "number",
+          "label": {
+            "en": "Issue number",
+            "fr": "Numéro de la demande",
+            "de": "Ticketnummer",
+            "es": "Número de la petición"
+          }
+        },
+        {
+          "key": "subject",
+          "type": "string",
+          "label": {
+            "en": "Subject",
+            "fr": "Sujet",
+            "de": "Betreff",
+            "es": "Asunto"
+          }
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker",
+            "fr": "Tracker",
+            "de": "Tracker",
+            "es": "Tipo"
+          }
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "label": {
+            "en": "Status",
+            "fr": "Statut",
+            "de": "Status",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité",
+            "de": "Priorität",
+            "es": "Prioridad"
+          }
+        },
+        {
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author",
+            "fr": "Auteur",
+            "de": "Autor",
+            "es": "Autor"
+          }
+        },
+        {
+          "key": "assigned_to",
+          "type": "string",
+          "label": {
+            "en": "Assignee",
+            "fr": "Assignée à",
+            "de": "Zugewiesen an",
+            "es": "Asignada a"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (YYYY-MM-DD)",
+            "fr": "Échéance (AAAA-MM-JJ)",
+            "de": "Fälligkeit (JJJJ-MM-TT)",
+            "es": "Fecha de vencimiento (AAAA-MM-DD)"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Link to the issue",
+            "fr": "Lien vers la demande",
+            "de": "Link zum Ticket",
+            "es": "Enlace a la petición"
+          }
+        }
+      ]
+    },
+    {
+      "key": "issue_overdue",
+      "label": {
+        "en": "Redmine issue overdue",
+        "fr": "Demande Redmine en retard",
+        "de": "Redmine-Ticket überfällig",
+        "es": "Petición de Redmine atrasada"
+      },
+      "description": {
+        "en": "An open issue passed its due date (checked after midnight, time of Gladys).",
+        "fr": "Une demande ouverte a dépassé son échéance (vérifié après minuit, heure de Gladys).",
+        "de": "Ein offenes Ticket hat seine Fälligkeit überschritten (geprüft nach Mitternacht, Gladys-Zeit).",
+        "es": "Una petición abierta ha superado su fecha de vencimiento (comprobado tras la medianoche, hora de Gladys)."
+      },
+      "fields": [
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project name (empty: any)",
+            "fr": "Nom du projet (vide : tous)",
+            "de": "Projektname (leer: beliebig)",
+            "es": "Nombre del proyecto (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, capitals included.",
+            "fr": "Tel qu'écrit dans Redmine, majuscules comprises.",
+            "de": "Wie in Redmine geschrieben, mit Großbuchstaben.",
+            "es": "Tal como está escrito en Redmine, con mayúsculas."
+          }
+        },
+        {
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker (empty: any)",
+            "fr": "Tracker (vide : tous)",
+            "de": "Tracker (leer: beliebig)",
+            "es": "Tipo (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, e.g. Bug.",
+            "fr": "Tel qu'écrit dans Redmine, ex. Anomalie.",
+            "de": "Wie in Redmine geschrieben, z. B. Fehler.",
+            "es": "Tal como está escrito en Redmine, p. ej. Errores."
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority (empty: any)",
+            "fr": "Priorité (vide : toutes)",
+            "de": "Priorität (leer: beliebig)",
+            "es": "Prioridad (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, e.g. Urgent.",
+            "fr": "Tel qu'écrit dans Redmine, ex. Urgent.",
+            "de": "Wie in Redmine geschrieben, z. B. Dringend.",
+            "es": "Tal como está escrito en Redmine, p. ej. Urgente."
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "issue_id",
+          "type": "number",
+          "label": {
+            "en": "Issue number",
+            "fr": "Numéro de la demande",
+            "de": "Ticketnummer",
+            "es": "Número de la petición"
+          }
+        },
+        {
+          "key": "subject",
+          "type": "string",
+          "label": {
+            "en": "Subject",
+            "fr": "Sujet",
+            "de": "Betreff",
+            "es": "Asunto"
+          }
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker",
+            "fr": "Tracker",
+            "de": "Tracker",
+            "es": "Tipo"
+          }
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "label": {
+            "en": "Status",
+            "fr": "Statut",
+            "de": "Status",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité",
+            "de": "Priorität",
+            "es": "Prioridad"
+          }
+        },
+        {
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author",
+            "fr": "Auteur",
+            "de": "Autor",
+            "es": "Autor"
+          }
+        },
+        {
+          "key": "assigned_to",
+          "type": "string",
+          "label": {
+            "en": "Assignee",
+            "fr": "Assignée à",
+            "de": "Zugewiesen an",
+            "es": "Asignada a"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (YYYY-MM-DD)",
+            "fr": "Échéance (AAAA-MM-JJ)",
+            "de": "Fälligkeit (JJJJ-MM-TT)",
+            "es": "Fecha de vencimiento (AAAA-MM-DD)"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Link to the issue",
+            "fr": "Lien vers la demande",
+            "de": "Link zum Ticket",
+            "es": "Enlace a la petición"
+          }
+        }
+      ]
+    },
+    {
+      "key": "issue_closed",
+      "label": {
+        "en": "Redmine issue closed",
+        "fr": "Demande Redmine fermée",
+        "de": "Redmine-Ticket geschlossen",
+        "es": "Petición de Redmine cerrada"
+      },
+      "description": {
+        "en": "An issue open at the previous reading now has a closed status.",
+        "fr": "Une demande ouverte à la lecture précédente a maintenant un statut fermé.",
+        "de": "Ein beim vorigen Lesen offenes Ticket hat jetzt einen geschlossenen Status.",
+        "es": "Una petición abierta en la lectura anterior tiene ahora un estado cerrado."
+      },
+      "fields": [
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project name (empty: any)",
+            "fr": "Nom du projet (vide : tous)",
+            "de": "Projektname (leer: beliebig)",
+            "es": "Nombre del proyecto (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, capitals included.",
+            "fr": "Tel qu'écrit dans Redmine, majuscules comprises.",
+            "de": "Wie in Redmine geschrieben, mit Großbuchstaben.",
+            "es": "Tal como está escrito en Redmine, con mayúsculas."
+          }
+        },
+        {
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker (empty: any)",
+            "fr": "Tracker (vide : tous)",
+            "de": "Tracker (leer: beliebig)",
+            "es": "Tipo (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, e.g. Bug.",
+            "fr": "Tel qu'écrit dans Redmine, ex. Anomalie.",
+            "de": "Wie in Redmine geschrieben, z. B. Fehler.",
+            "es": "Tal como está escrito en Redmine, p. ej. Errores."
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority (empty: any)",
+            "fr": "Priorité (vide : toutes)",
+            "de": "Priorität (leer: beliebig)",
+            "es": "Prioridad (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "As written in Redmine, e.g. Urgent.",
+            "fr": "Tel qu'écrit dans Redmine, ex. Urgent.",
+            "de": "Wie in Redmine geschrieben, z. B. Dringend.",
+            "es": "Tal como está escrito en Redmine, p. ej. Urgente."
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "issue_id",
+          "type": "number",
+          "label": {
+            "en": "Issue number",
+            "fr": "Numéro de la demande",
+            "de": "Ticketnummer",
+            "es": "Número de la petición"
+          }
+        },
+        {
+          "key": "subject",
+          "type": "string",
+          "label": {
+            "en": "Subject",
+            "fr": "Sujet",
+            "de": "Betreff",
+            "es": "Asunto"
+          }
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker",
+            "fr": "Tracker",
+            "de": "Tracker",
+            "es": "Tipo"
+          }
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "label": {
+            "en": "Status",
+            "fr": "Statut",
+            "de": "Status",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité",
+            "de": "Priorität",
+            "es": "Prioridad"
+          }
+        },
+        {
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author",
+            "fr": "Auteur",
+            "de": "Autor",
+            "es": "Autor"
+          }
+        },
+        {
+          "key": "assigned_to",
+          "type": "string",
+          "label": {
+            "en": "Assignee",
+            "fr": "Assignée à",
+            "de": "Zugewiesen an",
+            "es": "Asignada a"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (YYYY-MM-DD)",
+            "fr": "Échéance (AAAA-MM-JJ)",
+            "de": "Fälligkeit (JJJJ-MM-TT)",
+            "es": "Fecha de vencimiento (AAAA-MM-DD)"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Link to the issue",
+            "fr": "Lien vers la demande",
+            "de": "Link zum Ticket",
+            "es": "Enlace a la petición"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "create_issue",
+      "label": {
+        "en": "Create a Redmine issue",
+        "fr": "Créer une demande Redmine",
+        "de": "Redmine-Ticket erstellen",
+        "es": "Crear una petición de Redmine"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Creates an issue, authored by the user of the key.",
+        "fr": "Crée une demande, au nom de l'utilisateur de la clé.",
+        "de": "Erstellt ein Ticket im Namen des Benutzers des Schlüssels.",
+        "es": "Crea una petición, en nombre del usuario de la clave."
+      },
+      "timeout_seconds": 20,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "key": "project",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Project (identifier, name or number)",
+            "fr": "Projet (identifiant, nom ou numéro)",
+            "de": "Projekt (Kennung, Name oder Nummer)",
+            "es": "Proyecto (identificador, nombre o número)"
+          }
+        },
+        {
+          "key": "subject",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Subject",
+            "fr": "Sujet",
+            "de": "Betreff",
+            "es": "Asunto"
+          }
+        },
+        {
+          "key": "description",
+          "type": "string",
+          "label": {
+            "en": "Description (optional)",
+            "fr": "Description (facultative)",
+            "de": "Beschreibung (optional)",
+            "es": "Descripción (opcional)"
+          },
+          "description": {
+            "en": "Scene variables are welcome: the sensor and its value, the time…",
+            "fr": "Les variables de scène sont bienvenues : le capteur et sa valeur, l'heure…",
+            "de": "Szenenvariablen sind willkommen: der Sensor und sein Wert, die Uhrzeit …",
+            "es": "Las variables de escena son bienvenidas: el sensor y su valor, la hora…"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority (empty: the default one)",
+            "fr": "Priorité (vide : celle par défaut)",
+            "de": "Priorität (leer: die Standardpriorität)",
+            "es": "Prioridad (vacío: la predeterminada)"
+          }
+        },
+        {
+          "key": "tracker",
+          "type": "string",
+          "label": {
+            "en": "Tracker (empty: the first of the project)",
+            "fr": "Tracker (vide : le premier du projet)",
+            "de": "Tracker (leer: der erste des Projekts)",
+            "es": "Tipo (vacío: el primero del proyecto)"
+          }
+        },
+        {
+          "key": "assign_to_me",
+          "type": "boolean",
+          "label": {
+            "en": "Assign to me",
+            "fr": "M'assigner la demande",
+            "de": "Mir zuweisen",
+            "es": "Asignármela"
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "issue_id",
+          "type": "number",
+          "label": {
+            "en": "Issue number",
+            "fr": "Numéro de la demande",
+            "de": "Ticketnummer",
+            "es": "Número de la petición"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Link to the issue",
+            "fr": "Lien vers la demande",
+            "de": "Link zum Ticket",
+            "es": "Enlace a la petición"
+          }
+        }
+      ]
+    },
+    {
+      "key": "add_note",
+      "label": {
+        "en": "Add a note to a Redmine issue",
+        "fr": "Ajouter une note à une demande Redmine",
+        "de": "Notiz zu einem Redmine-Ticket hinzufügen",
+        "es": "Añadir una nota a una petición de Redmine"
+      },
+      "description": {
+        "en": "Adds a note, written by the user of the key.",
+        "fr": "Ajoute une note, au nom de l'utilisateur de la clé.",
+        "de": "Fügt eine Notiz im Namen des Benutzers des Schlüssels hinzu.",
+        "es": "Añade una nota, en nombre del usuario de la clave."
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "issue",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Issue number (#125)",
+            "fr": "Numéro de la demande (#125)",
+            "de": "Ticketnummer (#125)",
+            "es": "Número de la petición (#125)"
+          },
+          "description": {
+            "en": "A number, or the output of \"Create a Redmine issue\" earlier in the scene.",
+            "fr": "Un numéro, ou la sortie de « Créer une demande Redmine » plus tôt dans la scène.",
+            "de": "Eine Nummer oder die Ausgabe von „Redmine-Ticket erstellen“ weiter oben in der Szene.",
+            "es": "Un número, o la salida de «Crear una petición de Redmine» antes en la escena."
+          }
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Text",
+            "fr": "Texte",
+            "de": "Text",
+            "es": "Texto"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "issue_id",
+          "type": "number",
+          "label": {
+            "en": "Issue number",
+            "fr": "Numéro de la demande",
+            "de": "Ticketnummer",
+            "es": "Número de la petición"
+          }
+        },
+        {
+          "key": "subject",
+          "type": "string",
+          "label": {
+            "en": "Subject",
+            "fr": "Sujet",
+            "de": "Betreff",
+            "es": "Asunto"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "my_issues",
+      "label": {
+        "en": "My Redmine issues",
+        "fr": "Mes demandes Redmine",
+        "de": "Meine Redmine-Tickets",
+        "es": "Mis peticiones de Redmine"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The open issues assigned to me, overdue ones first.",
+        "fr": "Les demandes ouvertes qui me sont assignées, en retard d'abord.",
+        "de": "Die mir zugewiesenen offenen Tickets, überfällige zuerst.",
+        "es": "Las peticiones abiertas asignadas a mí, atrasadas primero."
+      },
+      "icon": "inbox"
     }
   ]
 }

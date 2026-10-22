@@ -32,15 +32,20 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+src/app.js                        registers every SDK handler on the hub (shared with the tests)
+src/hub.js                        reading timer, counters, scene events, scene action commands
+src/redmine/client.js             Redmine REST API client (account, issues, projects, notes)
+src/redmine/http.js               the one function that talks to the network (node:http/https)
+src/redmine/model.js              issues -> counters, "today", name lookup
+src/devices.js                    the "Redmine" device, the project devices, their five counters
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    dashboard widget handler (manifest `widgets`)
+src/texts.js                      every message sent to Gladys, in four languages
+src/store.js                      /data/redmine-state.json: what the previous reading saw
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+gladys-assistant-integration.json manifest: name, config_schema, actions, triggers, widget...
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (mandatory)
+test/                             node --test, against the SDK's fake Gladys and test/helpers/fakeRedmine.js
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +75,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget, manifest texts, and `docs/{en,fr,de,es}.md`, kept in sync
+  (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -197,6 +203,30 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Redmine (propre à ce dépôt)
+
+Vérifié contre l'image officielle `redmine` 6.1 en Docker (SQLite, `redmine:load_default_data` en
+français, API activée par `rails runner`), octobre 2026. Réponses réelles dans `test/fixtures/redmine/`.
+
+- **API REST coupée : la clé est ignorée en silence.** `/issues.json` répond 200 avec les demandes des
+  projets publics, comme à un visiteur anonyme ; seul `/my/account.json` répond 403 (corps vide). Il est
+  donc lu en premier à chaque lecture, et son 403 veut dire « API désactivée ».
+- Clé fausse : 401 au corps vide ; droit manquant : 403 vide ; demande absente : 404 vide ; route
+  inconnue (mauvais préfixe) : 404 **avec** un corps JSON `{"status":404,"error":"Not Found"}` ; demande
+  refusée : 422 `{ errors: [...] }` dans la langue de l'utilisateur, renvoyés tels quels à la scène.
+- `limit` plafonné à 100 : lecture par pages (`offset`, `total_count`). Les totaux restent exacts
+  au-delà des pages lues.
+- `assigned_to_id=me` compte aussi les groupes de l'utilisateur : la liste « à moi » est lue par l'API,
+  pas recalculée.
+- `status.is_closed` n'est dans la demande que depuis Redmine 5.1 : repli sur `/issue_statuses.json`.
+- `due_date` est un jour sans fuseau ; « aujourd'hui » et « en retard » se calculent dans le fuseau de
+  Gladys (`TZ`). `updated_on` accepte un horodatage UTC (`>=2026-10-21T22:00:00Z`).
+- Une échéance avant la date de début est refusée (422) ; la date de début vaut aujourd'hui par défaut.
+- Le projet d'une demande ne donne que `id` et `name`, pas l'identifiant : les filtres de déclencheur
+  portent sur le nom.
+- Les noms de statuts, priorités et trackers sont ceux de l'instance (langue des données par défaut) :
+  pas de liste fixe possible, d'où des filtres `string` comparés à l'égalité stricte par le cœur.
 
 ## Store
 

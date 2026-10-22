@@ -12,44 +12,20 @@ the notes of the version's GitHub Release.
 
 ### Added
 
-- A working example of scene triggers, scene actions and dashboard widgets
-  (Gladys 5.1.0 or later).
-- `CHANGELOG.md`, rolled by the Release workflow.
-- A GitHub Release for every version, with its changelog section as notes: the
-  Gladys Supervision page links each version to the repository's releases.
-- CI runs the tests on Node 22 and 24, and builds the Docker image.
-- Dependabot keeps the npm dependencies and the GitHub Actions up to date.
-- `SECURITY.md` (how to report a vulnerability) and `CLAUDE.md` (project rules
-  for contributors and coding assistants).
-- Manifest tests: `version` matches `package.json`, `docker_image` is tagged
-  with it, descriptions hold 10 to 100 characters, placeholders are
-  multi-language objects.
-- The latitude and longitude fields show an example value as placeholder.
-
-### Changed
-
-- Node.js 22 or later is required (Node 20 is end-of-life).
-- Integration SDK 0.15.0. The tests now run against the fake Gladys of the
-  SDK, which refuses the payloads Gladys refuses.
-- The refresh interval is one minute minimum, the fastest Gladys polls a
-  device. The plug's power is only sent when it changes, and every 30
-  minutes otherwise.
-
-### Fixed
-
-- Gladys refused the devices of the Discovery tab: the weather station and
-  the plug declared their poll frequency in seconds instead of one of the
-  values Gladys accepts, and were never polled. They now poll every minute,
-  and the readings follow the refresh interval of the configuration.
-
-- The release commit no longer fails `npm run format:check`: the Release
-  workflow updates the manifest `version` and `docker_image` in place instead
-  of re-printing the whole file with `jq`.
-- The integration can write to `/data`: the image creates the directory owned
-  by the `node` user, a new Docker volume was owned by root.
-- A sub-container running the integration's own image follows it to the new
-  tag at each release, as well as in the manifest of the build summary: it kept
-  the previous tag, which may not exist on the registry. Sub-containers on a
-  third-party image (a broker, a database...) keep theirs.
-
-[Unreleased]: https://github.com/GladysAssistant/integration-template-js/commits/main
+- Redmine 4.2 or later in Gladys, through the REST API with the API key of a
+  Redmine user.
+- A "Redmine" device with five counters: open issues, issues assigned to me (or
+  to one of my groups), overdue, due today and updated today; and, optionally,
+  one device with the same counters per project followed (10 at most).
+- The "My Redmine issues" dashboard widget: assigned, overdue and due-today
+  counts, and the eight most pressing issues assigned to me, overdue ones
+  flagged.
+- Scene triggers "New Redmine issue", "Redmine issue assigned to me", "Redmine
+  issue overdue" and "Redmine issue closed", filtered by project, tracker and
+  priority, with the issue's subject, project, tracker, status, priority,
+  author, assignee, due date and link as variables.
+- Scene actions "Create a Redmine issue" (project, subject, description,
+  priority, tracker, assign to me) and "Add a note to a Redmine issue".
+- A "Test the connection" action, and connection statuses that say what to fix
+  (REST API off, key refused, wrong address, self-signed certificate).
+- English, French, German and Spanish texts and documentation.

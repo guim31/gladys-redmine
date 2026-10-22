@@ -30,6 +30,19 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration keeps and sends:
+
+- the Redmine address and the API key live in the configuration of the
+  integration, stored by Gladys; the key travels in the `X-Redmine-API-Key`
+  header, never in an address, and is never written to the logs;
+- `/data/redmine-state.json` holds the address of Redmine, the id of the Redmine
+  user, the highest issue number seen and the numbers of the open, overdue and
+  assigned issues (to fire each scene event once): no subject, no content, no
+  key;
+- the integration only talks to the Redmine address of the configuration (HTTP
+  or HTTPS); it acts with the rights of that Redmine user, so give it a
+  dedicated user with the smallest role that fits.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+Redmine, and the other third-party services and devices.
