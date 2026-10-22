@@ -1,67 +1,176 @@
-# Template de démonstration
+# Redmine
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Les demandes de votre [Redmine](https://www.redmine.org) dans Gladys : combien
+sont ouvertes, assignées à vous, en retard, à échéance aujourd'hui, mises à jour
+aujourd'hui. Une scène réagit à une nouvelle demande, à une demande qui vous est
+assignée, à une demande qui passe en retard ou à une demande fermée, et Gladys
+peut **créer une demande d'elle-même** quand elle détecte quelque chose à faire :
+une fuite d'eau, un filtre à changer, une imprimante qui ne répond plus.
 
-## Ce que vous obtenez
+> **Vos retours sont les bienvenus.** Cette intégration a été testée contre un
+> vrai Redmine (l'image Docker officielle `redmine` 6.1, octobre 2026), pas encore
+> au quotidien sur un vrai suivi. Si quelque chose ne marche pas comme décrit,
+> dites-le sur le [forum de Gladys](https://community.gladysassistant.com) ou dans
+> les [issues](https://github.com/guim31/gladys-redmine/issues).
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+## Ce qu'il faut
 
-## Configuration
+- Gladys Assistant 5.1.0 ou plus récent.
+- **Redmine 4.2 ou plus récent**, auto-hébergé ou hébergé (Planio, un serveur à
+  vous sur Internet), joignable depuis Gladys.
+- Un **utilisateur Redmine** au nom duquel Gladys lit et crée les demandes : le
+  vôtre, ou un utilisateur créé pour elle (`gladys`), membre des projets à suivre
+  avec un rôle qui peut voir, créer des demandes et ajouter des notes (le rôle
+  **Développeur** par défaut le peut). L'intégration voit exactement ce que cet
+  utilisateur voit dans Redmine.
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+## Installation
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+### Dans Redmine
 
-## Actions
+1. **Administration** → **Configuration** → onglet **API** : cochez **Activer
+   l'API REST**, puis enregistrez.
+2. Connecté en tant qu'utilisateur de Gladys, ouvrez **Mon compte** et, dans la
+   colonne de droite, sous **Clé d'accès API**, cliquez sur **Afficher** :
+   copiez la clé.
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+### Dans Gladys
 
-## Scènes
+1. **Intégrations** → installez **Redmine**.
+2. Dans l'écran **Configuration**, renseignez :
+   - **Adresse** : l'adresse de Redmine comme dans le navigateur, ex.
+     `https://redmine.example.org` ou `http://192.168.1.30:3000` (un dossier
+     `/redmine` est gardé, `/issues/…` ou `/projects/…` sont retirés) ;
+   - **Clé d'API** : la clé copiée à l'étape 2 ;
+   - **Projets avec leur propre appareil** (facultatif) : identifiants ou noms de
+     projets, séparés par des virgules, ex. `maison, bureau` (10 au plus) ;
+   - **Accepter les certificats auto-signés** : pour un Redmine en `https://`
+     avec un certificat auto-signé ;
+   - **Intervalle de rafraîchissement** : 1, 2, 5 (par défaut) ou 10 minutes ;
+   - **Langue des noms de fonctionnalités** : la langue des noms donnés aux
+     fonctionnalités des appareils.
+3. **Tester la connexion** indique l'utilisateur et le nombre de demandes
+   ouvertes, qui lui sont assignées et en retard, et nomme les projets
+   introuvables.
+4. Onglet **Découverte** : ajoutez l'appareil **Redmine**, et celui de chaque
+   projet suivi (**Redmine Maison**, par exemple).
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+## Appareils
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+Un appareil **Redmine** pour toutes les demandes que voit l'utilisateur, et un
+appareil par projet suivi, avec cinq compteurs mis à jour à chaque lecture :
+
+| Fonctionnalité                    | Ce qu'elle compte                                                     |
+| --------------------------------- | --------------------------------------------------------------------- |
+| Demandes ouvertes                 | demandes dont le statut n'est pas fermé                               |
+| Demandes assignées à moi          | demandes ouvertes assignées à l'utilisateur, ou à l'un de ses groupes |
+| Demandes en retard                | demandes ouvertes dont l'échéance est passée                          |
+| Demandes à échéance aujourd'hui   | demandes ouvertes dont l'échéance est aujourd'hui                     |
+| Demandes mises à jour aujourd'hui | demandes modifiées depuis minuit, ouvertes ou fermées                 |
+
+« Aujourd'hui » est le jour dans le fuseau horaire de Gladys. Une demande sans
+échéance n'est jamais en retard. Les compteurs gardent leur historique et servent
+de conditions dans les scènes (« si Demandes en retard est supérieur à 0 »). Un
+appareil de projet ne compte que les demandes de ce projet, pas celles de ses
+sous-projets.
 
 ## Tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Le widget **Mes demandes Redmine** affiche trois tuiles (assignées à moi, en
+retard, pour aujourd'hui) et les huit demandes ouvertes les plus pressantes
+assignées à l'utilisateur : celles en retard d'abord (pastille rouge « En
+retard »), puis celles à échéance aujourd'hui (pastille orange « Aujourd'hui »),
+puis par échéance. Chaque ligne donne le projet, le statut et la priorité. Quand
+Redmine est en `https://`, chaque demande propose un lien **Ouvrir dans Redmine**.
+
+## Scènes
+
+### Déclencheurs
+
+Les quatre déclencheurs filtrent par **Nom du projet**, **Tracker** et
+**Priorité**, écrits comme dans Redmine (majuscules comprises ; vide : tous).
+
+- **Nouvelle demande Redmine** : une demande a été créée dans Redmine, par un
+  utilisateur, par e-mail ou par un autre outil. Les demandes créées par Gladys
+  elle-même ne déclenchent rien (pas de boucle).
+- **Demande Redmine assignée à moi** : une demande ouverte est maintenant
+  assignée à l'utilisateur de la clé (ou à l'un de ses groupes) : créée ainsi, ou
+  réassignée.
+- **Demande Redmine en retard** : une demande ouverte vient de dépasser son
+  échéance. Vérifié à chaque lecture : la première lecture après minuit le
+  déclenche pour les demandes à échéance la veille.
+- **Demande Redmine fermée** : une demande ouverte à la lecture précédente a
+  maintenant un statut fermé (Fermé, Rejeté…).
+
+Variables transmises aux actions : numéro de la demande, sujet, projet, tracker,
+statut, priorité, auteur, assignée à, échéance et lien vers la demande. Les noms
+sont ceux qu'affiche Redmine, dans sa langue.
+
+Les événements sont détectés à chaque lecture : ils arrivent au plus un intervalle
+de rafraîchissement après les faits. À la toute première lecture (ou après un
+changement de serveur ou d'utilisateur), l'intégration prend note de l'existant
+sans rien déclencher. Une lecture déclenche 30 événements au plus (un import en
+masse n'inonde pas Gladys).
+
+### Actions
+
+- **Créer une demande Redmine** : crée une demande au nom de l'utilisateur de la
+  clé, qui en est l'auteur. Champs : **Projet** (identifiant, nom ou numéro,
+  obligatoire), **Sujet** (obligatoire), **Description** (facultative ; les
+  variables de scène sont bienvenues), **Priorité** (nom, vide : celle par
+  défaut), **Tracker** (nom, vide : le premier du projet) et **M'assigner la
+  demande**. Sorties : le numéro de la demande et son lien.
+- **Ajouter une note à une demande Redmine** : ajoute une note à la demande
+  donnée par son numéro (`125` ou `#125`), au nom de l'utilisateur de la clé. Le
+  numéro peut venir d'un « Créer une demande Redmine » plus tôt dans la scène, ou
+  du déclencheur. Sorties : le numéro et le sujet de la demande.
+
+Un projet, une priorité ou un tracker se donne par son numéro ou son nom, sans
+tenir compte des majuscules ni des accents ; un projet aussi par son identifiant
+(`maison`).
+
+### Idées de scènes
+
+- **Fuite d'eau** : le détecteur de fuite de la cave signale une fuite → **Créer
+  une demande Redmine** « Fuite d'eau à la cave » dans le projet `maison`,
+  priorité Urgent, assignée à moi, description avec l'heure ; puis un message
+  Gladys avec le lien vers la demande.
+- **Point du matin** : chaque jour de semaine à 8 h, si **Demandes à échéance
+  aujourd'hui** de l'appareil Redmine est supérieur à 0, Gladys annonce combien de
+  demandes arrivent à échéance aujourd'hui.
+- **Astreinte** : **Nouvelle demande Redmine** filtrée sur la priorité Immédiat →
+  un message Telegram avec le sujet, l'auteur et le lien ; **Demande Redmine en
+  retard** → la lampe du bureau passe au rouge ; **Demande Redmine fermée** →
+  retour au blanc.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« aucune API Redmine à cette adresse »** : vérifiez l'adresse (avec le
+  dossier `/redmine` s'il y en a un) en ouvrant `…/issues.json` dans un
+  navigateur : Redmine répond en JSON.
+- **« l'API REST est désactivée »** : voir l'étape 1 dans Redmine. API coupée,
+  Redmine ignore la clé et ne montrerait que les projets publics : l'intégration
+  le vérifie d'abord.
+- **« clé d'API refusée »** : la clé a été réinitialisée depuis (Mon compte,
+  Réinitialiser), ou l'utilisateur est verrouillé.
+- **« l'utilisateur Redmine n'a pas la permission nécessaire dans ce projet »** :
+  son rôle dans le projet ne permet pas de créer des demandes ou d'ajouter des
+  notes.
+- **« Projets introuvables »** (Tester la connexion) : l'utilisateur n'est pas
+  membre du projet, ou l'identifiant est mal écrit.
+- **Les compteurs restent à zéro** : l'utilisateur n'est membre d'aucun projet, ou
+  son rôle ne permet pas de voir les demandes.
+
+## Limites
+
+- Un Redmine par installation, 10 projets suivis au plus.
+- Les 1 000 demandes ouvertes les plus récentes sont détaillées (en retard, à
+  échéance aujourd'hui, appareils de projet) ; au-delà, les compteurs « Demandes
+  ouvertes » et « Demandes assignées à moi » restent exacts.
+- Un sous-projet n'est pas compté dans l'appareil de son parent : suivez-le comme
+  un projet.
+- Une demande créée puis fermée entre deux lectures déclenche « Nouvelle demande
+  Redmine » mais pas « fermée ».
+- Les champs personnalisés, le temps passé et les versions ne sont pas lus.
+
+Cette intégration n'est pas affiliée à Redmine ni à ses auteurs.

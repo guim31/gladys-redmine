@@ -1,0 +1,33 @@
+{
+  "subject_blank": {
+    "status": 422,
+    "body": {
+      "errors": ["Subject cannot be blank"]
+    }
+  },
+  "bad_key": {
+    "status": 401,
+    "body": ""
+  },
+  "api_disabled": {
+    "status": 403,
+    "body": ""
+  },
+  "not_found": {
+    "status": 404,
+    "body": ""
+  },
+  "route_not_found": {
+    "status": 404,
+    "body": {
+      "status": 404,
+      "error": "Not Found"
+    }
+  },
+  "due_before_start": {
+    "status": 422,
+    "body": {
+      "errors": ["Due date must be greater than start date"]
+    }
+  }
+}
