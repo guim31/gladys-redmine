@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-22
+
 ### Added
 
 - Redmine 4.2 or later in Gladys, through the REST API with the API key of a
@@ -29,3 +31,6 @@ the notes of the version's GitHub Release.
 - A "Test the connection" action, and connection statuses that say what to fix
   (REST API off, key refused, wrong address, self-signed certificate).
 - English, French, German and Spanish texts and documentation.
+
+[Unreleased]: https://github.com/guim31/gladys-redmine/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-redmine/releases/tag/v1.0.0
